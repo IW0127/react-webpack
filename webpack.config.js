@@ -1,89 +1,79 @@
-const path = require("path");
-const HtmlWebpackPlugin = require("html-webpack-plugin");
-const MiniCssExtractPlugin = require("mini-css-extract-plugin");
-let FaviconsWebpackPlugin = require("favicons-webpack-plugin");
-var favicons = require("favicons"),
-  source = "./public/img/logo.png", // Source image(s). `string`, `buffer` or array of `string`
-  configuration = {
-    path: "/", // Path for overriding default icons path. `string`
-    dir: "auto", // Primary text direction for name, short_name, and description
-    lang: "en-US", // Primary language for name and short_name
-    background: "#fff", // Background colour for flattened icons. `string`
-    theme_color: "#fff", // Theme color user for example in Android's task switcher. `string`
-    scope: "/", // set of URLs that the browser considers within your app
-    version: "1.0", // Your application's version string. `string`
-    icons: {
-      favicons: true,
-    },
-  },
-  callback = function (error, response) {
-    if (error) {
-      console.log(error.message); // Error description e.g. "An unknown error has occurred"
-      return;
-    }
-    console.log(response.images); // Array of { name: string, contents: <buffer> }
-    console.log(response.files); // Array of { name: string, contents: <string> }
-    console.log(response.html); // Array of strings (html elements)
-  };
+const path = require('path');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
+const { HotModuleReplacementPlugin } = require('webpack');
 
-favicons(source, configuration, callback);
+const mode =
+  process.env.NODE_ENV == 'production' ? 'production' : 'development';
+console.log(mode, __dirname);
 module.exports = {
-  entry: "./src/index.js",
+  entry: './src/index.js',
+  mode: mode,
   output: {
-    path: path.resolve(__dirname, "dist"),
-    filename: "assets/js/bundle.js",
+    path: path.resolve(__dirname, 'dist'),
+    filename: 'js/bundle.js',
+    clean: true,
+  },
+  devServer: {
+    static: path.join(__dirname, 'dist'),
+    port: 4000,
+    compress: true,
+    open: true,
+    historyApiFallback: true,
+    hot: true,
   },
   resolve: {
-    extensions: [".js", ".jsx"],
+    fallback: {
+      buffer: false,
+    },
+    extensions: ['*', '.js', '.jsx'],
+  },
+  devtool: 'inline-source-map',
+  stats: {
+    colors: true,
+    modules: true,
+    reasons: true,
+    errorDetails: true,
+  },
+  performance: {
+    hints: false,
   },
   module: {
     rules: [
       {
-        test: /\.(js|jsx)$/,
+        test: /\.(js|jsx)$/i,
         exclude: /node_modules/,
-        use: {
-          loader: "babel-loader",
-        },
-      },
-      {
-        test: /\.html$/,
-        use: {
-          loader: "html-loader",
-        },
-      },
-      {
-        test: /\.(s*)css$/,
-        use: [MiniCssExtractPlugin.loader, "css-loader", "sass-loader"],
+        loader: 'babel-loader',
       },
       {
         test: /\.(jpe?g|png|gif|svg)$/i,
         use: [
           {
-            loader: "url-loader",
+            loader: 'url-loader',
             options: {
               limit: false,
-              name: "assets/img/[name]-[hash:8].[ext]",
+              name: 'assets/img/[name]-[hash:8].[ext]',
             },
           },
         ],
+      },
+      {
+        test: /\.css$/i,
+        use: [MiniCssExtractPlugin.loader, 'css-loader'],
       },
     ],
   },
   plugins: [
     new HtmlWebpackPlugin({
-      template: "public/index.html",
-      filename: "index.html",
+      inject: true,
+      template: 'public/index.html',
+      favicon: 'public/favicon.png',
     }),
-    new FaviconsWebpackPlugin("./public/img/logo.png"),
     new MiniCssExtractPlugin({
-      filename: "assets/css/[name].css",
+      filename: 'style/[name].css',
     }),
+    new HotModuleReplacementPlugin(),
+    new ReactRefreshWebpackPlugin(),
   ],
-  devServer: {
-    static: path.join(__dirname, "dist"),
-    compress: true,
-    port: 3001,
-    open: true,
-    historyApiFallback: true,
-  },
 };
